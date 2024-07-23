@@ -1,10 +1,18 @@
-import { ethers } from "hardhat"
+import { ethers, upgrades } from "hardhat";
 
 export default async function deployTicTacToe() {
-  const ticTacToeFactory = await ethers.getContractFactory("TicTacToe")
-  const contract = await ticTacToeFactory.deploy()
+  const TicTacToeFactory = await ethers.getContractFactory("TicTacToe");
 
-  await contract.waitForDeployment()
+  const ticTacToeProxy = await upgrades.deployProxy(TicTacToeFactory, {
+    kind: "transparent"
+  });
 
-  console.log(`TicTacToe deployed to: ${await contract.getAddress()}`)
+  await ticTacToeProxy.waitForDeployment();
+
+  const proxyAddress = await ticTacToeProxy.getAddress();
+  console.log("Proxy deployed to:", proxyAddress);
+
+  const implementationAddress = await upgrades.erc1967.getImplementationAddress(proxyAddress);
+
+  console.log("Implementation deployed to:", implementationAddress);
 }
